@@ -9,7 +9,9 @@ proprietary behavior. The closed-book contract is frozen before consulting the f
 ## Current phase
 
 - Closed-book problem contract: [docs/closed-book-contract.md](docs/closed-book-contract.md)
-- Source comparison, architecture decision, runnable slice, and public CI: pending the next phases
+- Fixed-source comparison: [docs/research-log.md](docs/research-log.md)
+- Architecture decision: [ADR 0001](docs/adr/0001-content-addressed-objects-and-metadata-gated-publication.md)
+- Runnable slice and public CI: pending implementation
 
 ## Evidence boundary
 
