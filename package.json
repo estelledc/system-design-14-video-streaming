@@ -1,0 +1,43 @@
+{
+  "name": "system-design-14-video-streaming",
+  "version": "0.1.0",
+  "description": "Evidence-first resumable upload and atomic synthetic video publication",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/main.js serve",
+    "lint": "node scripts/repo-check.mjs",
+    "test": "node --test --test-reporter=spec test/unit/*.test.js",
+    "test:postgres": "node --test --test-reporter=spec test/integration/*.test.js",
+    "smoke:postgres": "node scripts/postgres-smoke.mjs",
+    "benchmark:postgres": "node scripts/postgres-benchmark.mjs",
+    "audit": "npm audit --audit-level=high",
+    "check": "npm run lint && npm test && npm run audit",
+    "check:ci": "npm run check && npm run test:postgres && npm run smoke:postgres && npm run benchmark:postgres"
+  },
+  "dependencies": {
+    "pg": "8.23.0"
+  },
+  "keywords": [
+    "system-design",
+    "video-streaming",
+    "resumable-upload",
+    "content-addressed-storage",
+    "postgresql"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/estelledc/system-design-14-video-streaming.git"
+  },
+  "bugs": {
+    "url": "https://github.com/estelledc/system-design-14-video-streaming/issues"
+  },
+  "homepage": "https://github.com/estelledc/system-design-14-video-streaming#readme",
+  "license": "MIT"
+}

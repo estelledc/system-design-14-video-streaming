@@ -1,24 +1,106 @@
 # Atomic Video Publication Lab
 
-This clean-room system-design practice asks one narrow question: how can a creator upload bytes in resumable pieces, let an
-asynchronous worker derive an immutable streaming artifact, and expose only a completely published manifest to viewers?
+An evidence-first video-pipeline practice that makes one lifecycle invariant executable: no viewer can discover a manifest until
+the complete, immutable synthetic rendition has been verified and explicitly published.
 
-The title-level problem is commonly framed as “design YouTube.” This repository does not copy a product, source chapter, UI, or
-proprietary behavior. The closed-book contract is frozen before consulting the fixed secondary chapter.
+A creator uploads bounded synthetic bytes through a resumable offset protocol. PostgreSQL serializes upload and lifecycle state,
+a fenced worker creates content-addressed segments plus one canonical manifest, and the read path authorizes every manifest or
+segment against the active publication pointer. This is a learning repository, not a production video platform.
 
-## Current phase
+## What is implemented
 
-- Closed-book problem contract: [docs/closed-book-contract.md](docs/closed-book-contract.md)
-- Fixed-source comparison: [docs/research-log.md](docs/research-log.md)
-- Architecture decision: [ADR 0001](docs/adr/0001-content-addressed-objects-and-metadata-gated-publication.md)
-- Runnable slice and public CI: pending implementation
+- idempotent upload creation bound to an immutable owner/request digest;
+- sequential tus-like `HEAD`/`PATCH` offset recovery with exact chunk replay;
+- immutable local content-addressed objects installed by synced temp file and exclusive hard link;
+- contiguous chunk readback plus declared full-source SHA-256 verification before job creation;
+- one durable PostgreSQL job with lease expiry, random-token fencing, and deterministic retry;
+- deterministic synthetic segmentation and a canonical JSON manifest—deliberately not transcoding, HLS, or DASH;
+- `uploading → queued → processing → ready → published → tombstoned` lifecycle authority;
+- verification of every segment and manifest before one publication transaction selects the active rendition;
+- unauthenticated origin reads only for the active publication, with `private, no-store` and one bounded byte range;
+- bounded structured receipts that omit tokens, owner identity, request keys, IDs, digests, media bytes, and object paths;
+- process-death recovery after a committed chunk response is lost and after objects exist but `ready` is not committed.
 
-## Evidence boundary
+The slice deliberately excludes real codecs and players, parallel multipart/direct upload, adaptive bitrate, thumbnails, content
+moderation, private sharing, CDN/cache invalidation, object replication, backups, garbage collection, multi-region operation, and
+high availability.
 
-The intended vertical slice may prove upload acceptance, byte integrity, immutable object durability, worker fencing, complete
-manifest publication, and server-side byte writes. It must not call those facts successful decoding, screen display, a completed
-view, user attention, recommendation quality, copyright ownership, or production delivery.
+## Architecture in one view
 
-## License
+```text
+creator HTTP                 PostgreSQL authority                 local immutable objects
+     |                                |                                      |
+     | open / HEAD / PATCH ---------->| lock offset, commit chunk receipt     |
+     |                                |<---------- install chunk by digest ---|
+     | finalize --------------------->| verify coverage + source digest       |
+     |                                | commit source + queued job            |
+     |                                |                                      |
+worker                               claim + fenced lease                     |
+     |------------------------------->|                                      |
+     | read source, split synthetic bytes, install segments + manifest ------>|
+     |------------------------------->| atomically commit complete `ready`    |
+     |                                |                                      |
+owner publish ---------------------->| verify all objects; select active      |
+viewer GET ------------------------->| authorize active rendition ------------> verified read
+```
 
-MIT. Third-party study material is not included.
+Writing an object never makes it public. `ready` is also intentionally invisible: only the authenticated publication transition
+sets the active rendition. [Architecture](docs/architecture.md) describes the failure windows and the production scaling seams.
+
+## Run locally
+
+Requirements: Node.js 22 or newer, npm, a disposable PostgreSQL 17.6 database, and a private local directory on a POSIX-like
+filesystem.
+
+```bash
+npm ci --ignore-scripts
+docker compose up -d postgres
+export DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/video_streaming
+export OBJECT_ROOT="$PWD/.local-video-objects"
+export AUTH_TOKENS_JSON='["replace-with-at-least-16-characters"]'
+npm run check:ci
+```
+
+Start the API and run at most one eligible worker job:
+
+```bash
+npm start
+node src/main.js worker-once
+```
+
+The integration tests, smoke, and benchmark reset the configured database's `public` schema. Never point them at a shared or
+production database, and never use real credentials or media in this lab.
+
+## Verification boundary
+
+`npm run check:ci` runs repository policy, 16 pure/generated/filesystem/HTTP tests including 120 generated byte corpora, a
+dependency audit, seven real PostgreSQL integration tests, a true-process `SIGKILL` smoke, and a bounded benchmark. Public CI
+executes the same gate on Node 22, 24, and 26 with PostgreSQL 17.6.
+
+Passing proves only the exercised offset, integrity, object-install, fencing, publication, origin-read, and tombstone invariants.
+It does not prove valid media, codec/player behavior, remote client receipt, screen display, playback, a human view, CDN delivery,
+power-loss durability, production capacity, deployment, or external acceptance. Exact receipts live in
+[verification](docs/verification.md).
+
+## Research provenance
+
+The prompt source is chapter 14 of `liquidslr/system-design-notes`, fixed at commit
+`9d8388721e7231442763ad37398b8d82224aa68f`. The snapshot has no detected license, so this repository follows a clean-room
+boundary: the [closed-book contract](docs/closed-book-contract.md) was committed before source review, and no upstream prose,
+diagram, image, or code is copied. The later [research log](docs/research-log.md) compares the chapter against primary tus, S3,
+HTTP cache/range, HLS, PostgreSQL, and Node filesystem specifications.
+
+## Documents
+
+- [Requirements and invariants](docs/requirements.md)
+- [Architecture and publication flow](docs/architecture.md)
+- [HTTP and command API](docs/api.md)
+- [Threat model](docs/threat-model.md)
+- [Operations](docs/operations.md)
+- [Verification receipts](docs/verification.md)
+- [Closed-book contract](docs/closed-book-contract.md)
+- [Research log](docs/research-log.md)
+- [ADR 0001](docs/adr/0001-content-addressed-objects-and-metadata-gated-publication.md)
+- [Security policy](SECURITY.md)
+
+Licensed under the [MIT License](LICENSE).
