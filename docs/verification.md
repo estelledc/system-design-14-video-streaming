@@ -2,9 +2,12 @@
 
 ## Current receipt
 
-Implementation commit `91c773e7f1847bb4bc6f0de231c1b005b31c4cfc` is green in public GitHub Actions
-[run 32175254211](https://github.com/estelledc/system-design-14-video-streaming/actions/runs/32175254211). The run completed on
+The identity-safe rewrite preserved every existing tree, message, and timestamp while mapping the five commits in order: `635cf036e3971fdad1597fe8021cb183802b9ee9` → `598c839308b98cd3628a0111e21f7d65c503cf8d`, `363722dd7febcb17fac24ac578742c7ce66ae51c` → `6c1eb57550be17dcef651efabda67530e14b3be7`, `c16bfa204e6c50b0f3ab308eb1324883d73ff096` → `0ebef0f1c987bedf850b610bd3520fcf40e0a550`, `91c773e7f1847bb4bc6f0de231c1b005b31c4cfc` → `b29bda23d2e8ffa65e0027b613b57fac592b121e`, and `5e5212c345b6ea8767418cd7ebb7fa2baba66095` → `9a771e00475ad5d23cf4d7cff0d8cf56115055f1`.
+
+Implementation commit `b29bda23d2e8ffa65e0027b613b57fac592b121e` is green in the tree-equivalent historical pre-rewrite GitHub Actions [run 32175254211](https://github.com/estelledc/system-design-14-video-streaming/actions/runs/32175254211). The run remains bound to the old commit object and completed on
 2026-08-19 CST with PostgreSQL 17.6 and exact Node releases 22.23.2, 24.19.0, and 26.7.0.
+
+Current reachable `main` uses the repository owner's GitHub noreply identity. Rewritten baseline `9a771e00475ad5d23cf4d7cff0d8cf56115055f1` passed [CI run 32225906977](https://github.com/estelledc/system-design-14-video-streaming/actions/runs/32225906977) on Node 22, 24, and 26 with PostgreSQL 17.6 and the full quality gate.
 
 | Gate | Current result | Evidence boundary |
 |---|---|---|
@@ -16,10 +19,10 @@ Implementation commit `91c773e7f1847bb4bc6f0de231c1b005b31c4cfc` is green in pub
 | process smoke | pass on every runtime | response-loss retry, API/worker `SIGKILL`, object reuse, ready invisibility, range, tombstone |
 | bounded benchmark | completed on every runtime; raw values below | raw small-fixture timing only |
 
-The first public workflow at implementation commit `c16bfa204e6c50b0f3ab308eb1324883d73ff096` is deliberately retained as
+The first public workflow at tree-equivalent implementation commit `0ebef0f1c987bedf850b610bd3520fcf40e0a550` is deliberately retained as
 [red run 32175132813](https://github.com/estelledc/system-design-14-video-streaming/actions/runs/32175132813). It created no jobs
 because job-level `env` referenced `runner.temp`, while that position is evaluated before the runner context exists. Commit
-`91c773e7f1847bb4bc6f0de231c1b005b31c4cfc` removed the unused variable; no product assertion or test was weakened.
+`b29bda23d2e8ffa65e0027b613b57fac592b121e` removed the unused variable; no product assertion or test was weakened.
 
 ## Process and benchmark receipts
 
