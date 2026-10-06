@@ -22,7 +22,7 @@
     "check:ci": "npm run check && npm run test:postgres && npm run smoke:postgres && npm run benchmark:postgres"
   },
   "dependencies": {
-    "pg": "8.23.0"
+    "pg": "8.23.1"
   },
   "keywords": [
     "system-design",
